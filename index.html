@@ -190,7 +190,7 @@
         <div class="dot"></div>
         <p>Pure Chat</p>
         <p style="font-size:.75rem;opacity:.6">零注入 · 多 API · 纯对话</p>
-        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v9 · textarea overflow-y:auto + indigo滚动条</p>
+        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v10 · textarea DOM滚动条，和对话框一致滚动条</p>
       </div>
     </div>
     <div id="customBar"><div class="thumb"></div></div>
@@ -311,6 +311,24 @@ function rafScrollBottom(){
 // 窗口大小变化时重新校准
 new ResizeObserver(()=>{updateScroll(scrollY);}).observe(scrollHost);
 addEventListener('resize',()=>updateScroll(scrollY));
+(function(){
+  const ta=inputEl,bar=document.getElementById("inputBar"),th=bar.querySelector(".thumb");
+  function s(){
+    let sh=ta.scrollHeight,ch=ta.clientHeight;
+    if(sh<=ch){th.style.height="100%%";th.style.top="0";return}
+    let bh=ch,h=Math.max(bh/sh*bh,20);
+    th.style.height=h+"px";
+    th.style.top=(ta.scrollTop/(sh-ch)*(bh-h))+"px";
+  }
+  ta.addEventListener("scroll",s);
+  new ResizeObserver(s).observe(ta);
+  ta.addEventListener("input",()=>{
+    ta.style.height="auto";
+    ta.style.height=Math.min(ta.scrollHeight,140)+"px";
+    setTimeout(s,0);
+  });
+  s();
+})();
 
 /* ── 提供商 ────────────────────────────── */
 async function loadProviders(){
@@ -388,7 +406,7 @@ function addTyping(){
   d.innerHTML='<span></span><span></span><span></span>';
   messagesEl.appendChild(d);return d;
 }
-inputEl.addEventListener('input',()=>{inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,140)+'px'});
+
 loadProviders();
 </script>
 </body>
