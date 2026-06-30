@@ -8,177 +8,176 @@
 <meta http-equiv="Expires" content="0">
 <title>Pure Chat</title>
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:#0a0a0f;color:#e0e0e0;height:100vh;overflow:hidden;
-    display:flex;align-items:center;justify-content:center;
-  }
-  .bg-layer{
-    position:fixed;inset:0;z-index:0;pointer-events:none;
-    background:
-      radial-gradient(ellipse at 20% 20%,rgba(99,102,241,.12) 0%,transparent 50%),
-      radial-gradient(ellipse at 80% 80%,rgba(168,85,247,.08) 0%,transparent 50%),
-      radial-gradient(ellipse at 50% 50%,rgba(59,130,246,.05) 0%,transparent 70%);
-    animation:bg-drift 20s ease-in-out infinite alternate;
-  }
-  @keyframes bg-drift{0%{opacity:.8}50%{opacity:1}100%{opacity:.9}}
-  .bg-particles{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.4}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:#0a0a0f;color:#e0e0e0;height:100vh;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.bg-layer{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 20% 20%,rgba(99,102,241,.12) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(168,85,247,.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 50%,rgba(59,130,246,.05) 0%,transparent 70%);
+  animation:bg-drift 20s ease-in-out infinite alternate;
+}
+@keyframes bg-drift{0%{opacity:.8}50%{opacity:1}100%{opacity:.9}}
+.bg-particles{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.4}
 
-  /* ── 玻璃卡片 ──────────────────────────── */
-  .chat-wrapper{
-    position:relative;z-index:10;
-    width:min(720px,94vw);height:min(88vh,800px);
-    background:rgba(15,15,25,.55);
-    backdrop-filter:blur(20px) saturate(160%);
-    -webkit-backdrop-filter:blur(20px) saturate(160%);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.4);
-    display:flex;flex-direction:column;
-  }
+.chat-wrapper{
+  position:relative;z-index:10;
+  width:min(720px,94vw);height:min(88vh,800px);
+  background:rgba(15,15,25,.55);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;
+}
 
-  .scroll-host{
-    flex:1;min-height:0;position:relative;overflow:hidden;
-    display:flex;flex-direction:column;
-  }
-  .messages{
-    min-height:100%;overflow:hidden;
-    padding:24px 20px 24px 24px;
-    display:flex;flex-direction:column;gap:16px;
-  }
+.scroll-host{flex:1;min-height:0;position:relative}
 
-  /* ── 自定义滚动条（DOM元素，真正的div） ── */
-  #customBar{
-    position:absolute;right:3px;top:12px;bottom:12px;
-    width:4px;z-index:30;border-radius:10px;
-  }
-    #customBar .thumb{
-    position:absolute;left:0;right:0;min-height:24px;border-radius:10px;
-    background:rgba(99,102,241,.15);cursor:pointer;
-    transition:background .25s;
-  }
-  .scroll-host:hover #customBar .thumb{background:rgba(99,102,241,.30)}
+.messages{
+  height:100%;overflow-y:auto;overflow-x:hidden;
+  padding:24px 24px 24px 24px;
+  display:flex;flex-direction:column;gap:16px;
+  scroll-behavior:smooth;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.messages::-webkit-scrollbar{display:none}
 
-  .msg{
-    max-width:85%;padding:12px 16px;border-radius:16px;
-    font-size:.95rem;line-height:1.6;
-    word-break:break-word;
-  }
-  .msg.user{
-    align-self:flex-end;
-    background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.15);
-    border-bottom-right-radius:4px;
-  }
-  .msg.assistant{
-    align-self:flex-start;
-    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
-    border-bottom-left-radius:4px;
-  }
-  .msg p{margin:0 0 .5em}.msg p:last-child{margin-bottom:0}
-  .msg h2{font-size:1.15rem;font-weight:600;margin:1em 0 .4em;color:#fff}
-  .msg h3{font-size:1.05rem;font-weight:600;margin:1em 0 .4em;color:rgba(255,255,255,.9)}
-  .msg h4{font-size:1rem;font-weight:600;margin:.8em 0 .3em}
-  .msg strong{color:rgba(255,255,255,.95)}
-  .msg em{color:rgba(255,255,255,.8)}
-  .msg code{
-    background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;
-    font-size:.88em;font-family:"SF Mono","Fira Code","Cascadia Code",monospace;
-  }
-  .msg pre{
-    background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);
-    border-radius:10px;padding:12px 14px;overflow-x:auto;
-    margin:.6em 0;font-size:.85rem;line-height:1.5;
-  }
-  .msg pre code{background:none;padding:0;border-radius:0}
-  .msg ul,.msg ol{margin:.4em 0;padding-left:1.4em}
-  .msg li{margin:.2em 0}
-  .msg hr{border:none;border-top:1px solid rgba(255,255,255,.08);margin:1em 0}
-  .msg blockquote{
-    border-left:2px solid rgba(99,102,241,.4);margin:.6em 0;
-    padding-left:12px;color:rgba(255,255,255,.6);
-  }
+#customBar{
+  position:absolute;right:3px;top:12px;bottom:12px;
+  width:4px;z-index:30;border-radius:10px;
+}
+#customBar .thumb{
+  position:absolute;left:0;right:0;min-height:24px;border-radius:10px;
+  background:rgba(99,102,241,.15);cursor:pointer;
+  transition:background .25s;
+}
+.scroll-host:hover #customBar .thumb{background:rgba(99,102,241,.30)}
 
-  .typing{align-self:flex-start;padding:14px 18px;display:flex;gap:4px}
-  .typing span{
-    width:6px;height:6px;background:rgba(255,255,255,.3);
-    border-radius:50%;animation:bounce 1.2s infinite ease-in-out;
-  }
-  .typing span:nth-child(2){animation-delay:.15s}
-  .typing span:nth-child(3){animation-delay:.3s}
-  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+.msg{
+  max-width:85%;padding:12px 16px;border-radius:16px;
+  font-size:.95rem;line-height:1.6;
+  word-break:break-word;
+}
+.msg.user{
+  align-self:flex-end;
+  background:rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.15);
+  border-bottom-right-radius:4px;
+}
+.msg.assistant{
+  align-self:flex-start;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+  border-bottom-left-radius:4px;
+}
+.msg p{margin:0 0 .5em}.msg p:last-child{margin-bottom:0}
+.msg h2{font-size:1.15rem;font-weight:600;margin:1em 0 .4em;color:#fff}
+.msg h3{font-size:1.05rem;font-weight:600;margin:1em 0 .4em;color:rgba(255,255,255,.9)}
+.msg h4{font-size:1rem;font-weight:600;margin:.8em 0 .3em}
+.msg strong{color:rgba(255,255,255,.95)}
+.msg em{color:rgba(255,255,255,.8)}
+.msg code{
+  background:rgba(255,255,255,.08);padding:1px 5px;border-radius:4px;
+  font-size:.88em;font-family:"SF Mono","Fira Code","Cascadia Code",monospace;
+}
+.msg pre{
+  background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;padding:12px 14px;overflow-x:auto;
+  margin:.6em 0;font-size:.85rem;line-height:1.5;
+}
+.msg pre code{background:none;padding:0;border-radius:0}
+.msg ul,.msg ol{margin:.4em 0;padding-left:1.4em}
+.msg li{margin:.2em 0}
+.msg hr{border:none;border-top:1px solid rgba(255,255,255,.08);margin:1em 0}
+.msg blockquote{
+  border-left:2px solid rgba(99,102,241,.4);margin:.6em 0;
+  padding-left:12px;color:rgba(255,255,255,.6);
+}
 
-  .empty-hint{
-    flex:1;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    opacity:.25;gap:8px;user-select:none;
-  }
-  .empty-hint .dot{width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,.3);margin-bottom:12px}
-  .empty-hint p{font-size:.9rem;letter-spacing:.03em}
+.typing{align-self:flex-start;padding:14px 18px;display:flex;gap:4px}
+.typing span{
+  width:6px;height:6px;background:rgba(255,255,255,.3);
+  border-radius:50%;animation:bounce 1.2s infinite ease-in-out;
+}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
 
-  .input-area{
-    padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);
-    display:flex;gap:10px;align-items:flex-end;
-  }
-  .input-container{flex:1;position:relative;max-height:140px}
-  .input-area textarea{
-    width:100%;height:100%;resize:none;
-    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-    border-radius:14px;color:#e0e0e0;font-size:.95rem;font-family:inherit;
-    line-height:1.5;padding:10px 27px 10px 14px;outline:none;
-    min-height:44px;overflow-y:auto;transition:border-color .2s;
-    scrollbar-width:none;-ms-overflow-style:none;
-  }
-  .input-area textarea::-webkit-scrollbar{display:none}
-  .input-area textarea:focus{border-color:rgba(99,102,241,.4)}
-  .input-area textarea::placeholder{color:rgba(255,255,255,.2)}
-  .input-bar{position:absolute;right:3px;top:8px;bottom:8px;width:4px;border-radius:10px;pointer-events:auto}
-  .input-bar .thumb{position:absolute;left:0;right:0;min-height:24px;border-radius:10px;background:rgba(99,102,241,.15);transition:background .25s;cursor:pointer}
-  .input-container:hover .input-bar .thumb{background:rgba(99,102,241,.30)}
+.empty-hint{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  opacity:.25;gap:8px;user-select:none;
+}
+.empty-hint .dot{width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,.3);margin-bottom:12px}
+.empty-hint p{font-size:.9rem;letter-spacing:.03em}
 
-  .btn-send{
-    width:44px;height:44px;border-radius:14px;
-    border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.15);
-    color:rgba(255,255,255,.7);cursor:pointer;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;
-    transition:all .2s;font-size:1.1rem;
-  }
-  .btn-send:hover{background:rgba(99,102,241,.25);border-color:rgba(99,102,241,.5)}
-  .btn-send:disabled{opacity:.3;cursor:not-allowed}
+.input-area{
+  padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);
+  display:flex;gap:10px;align-items:flex-end;
+}
+.input-container{flex:1;position:relative;max-height:140px}
+.input-area textarea{
+  width:100%;height:100%;resize:none;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;color:#e0e0e0;font-size:.95rem;font-family:inherit;
+  line-height:1.5;padding:10px 27px 10px 14px;outline:none;
+  min-height:44px;overflow-y:auto;transition:border-color .2s;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.input-area textarea::-webkit-scrollbar{display:none}
+.input-area textarea:focus{border-color:rgba(99,102,241,.4)}
+.input-area textarea::placeholder{color:rgba(255,255,255,.2)}
+.input-bar{position:absolute;right:3px;top:8px;bottom:8px;width:4px;border-radius:10px;pointer-events:auto}
+.input-bar .thumb{position:absolute;left:0;right:0;min-height:24px;border-radius:10px;background:rgba(99,102,241,.15);transition:background .25s;cursor:pointer}
+.input-container:hover .input-bar .thumb{background:rgba(99,102,241,.30)}
 
-  .settings-row{display:flex;align-items:center;gap:8px;padding:0 20px 12px}
-  .settings-row select{
-    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-    border-radius:10px;color:rgba(255,255,255,.6);font-size:.78rem;
-    padding:7px 8px;outline:none;cursor:pointer;
-    appearance:none;-webkit-appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.3)'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 8px center;
-    padding-right:24px;min-width:0;
-  }
-  .settings-row select:focus{border-color:rgba(99,102,241,.3)}
-  .settings-row select option{background:#1a1a2e;color:#e0e0e0}
-  .settings-row input{
-    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-    border-radius:10px;color:rgba(255,255,255,.5);font-size:.78rem;
-    padding:8px 10px;outline:none;font-family:monospace;
-    letter-spacing:.02em;transition:border-color .2s;min-width:0;
-  }
-  .settings-row input:focus{border-color:rgba(99,102,241,.3);color:rgba(255,255,255,.7)}
-  .settings-row input::placeholder{color:rgba(255,255,255,.12)}
-  .settings-row .api-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#ef4444;transition:background .3s}
-  .settings-row .api-status.ok{background:#22c55e}
-  #modelInput{flex:1.5}#apiKey{flex:2.5}#baseUrlInput{flex:3}
+.btn-send{
+  width:44px;height:44px;border-radius:14px;
+  border:1px solid rgba(99,102,241,.3);background:rgba(99,102,241,.15);
+  color:rgba(255,255,255,.7);cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-size:1.1rem;
+}
+.btn-send:hover{background:rgba(99,102,241,.25);border-color:rgba(99,102,241,.5)}
+.btn-send:disabled{opacity:.3;cursor:not-allowed}
 
-  @media(max-width:600px){
-    .chat-wrapper{width:100vw;height:100vh;border-radius:0;border:none}
-    .msg{max-width:92%;font-size:.9rem}
-    .settings-row{flex-wrap:wrap}
-    #baseUrlInput{width:100%}
-  }
-  @media(prefers-reduced-motion:reduce){.bg-layer,.typing span{animation:none}}
-  @media(prefers-reduced-transparency:reduce){
-    .chat-wrapper{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(20,20,30,.95)}
-  }
+.settings-row{display:flex;align-items:center;gap:8px;padding:0 20px 12px}
+.settings-row select{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;color:rgba(255,255,255,.6);font-size:.78rem;
+  padding:7px 8px;outline:none;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.3)'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+  padding-right:24px;min-width:0;
+}
+.settings-row select:focus{border-color:rgba(99,102,241,.3)}
+.settings-row select option{background:#1a1a2e;color:#e0e0e0}
+.settings-row input{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;color:rgba(255,255,255,.5);font-size:.78rem;
+  padding:8px 10px;outline:none;font-family:monospace;
+  letter-spacing:.02em;transition:border-color .2s;min-width:0;
+}
+.settings-row input:focus{border-color:rgba(99,102,241,.3);color:rgba(255,255,255,.7)}
+.settings-row input::placeholder{color:rgba(255,255,255,.12)}
+.settings-row .api-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#ef4444;transition:background .3s}
+.settings-row .api-status.ok{background:#22c55e}
+#modelInput{flex:1.5}#apiKey{flex:2.5}#baseUrlInput{flex:3}
+
+@media(max-width:600px){
+  .chat-wrapper{width:100vw;height:100vh;border-radius:0;border:none}
+  .msg{max-width:92%;font-size:.9rem}
+  .settings-row{flex-wrap:wrap}
+  #baseUrlInput{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.bg-layer,.typing span{animation:none}}
+@media(prefers-reduced-transparency:reduce){
+  .chat-wrapper{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(20,20,30,.95)}
+}
 </style>
 </head>
 <body>
@@ -192,7 +191,6 @@
         <div class="dot"></div>
         <p>Pure Chat</p>
         <p style="font-size:.75rem;opacity:.6">零注入 · 多 API · 纯对话</p>
-        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v11 · 两处滚动条hover一致，不需要时自动隐藏</p>
       </div>
     </div>
     <div id="customBar"><div class="thumb"></div></div>
@@ -217,7 +215,6 @@
 </div>
 
 <script>
-/* ── 粒子 ──────────────────────────────── */
 (function(){
   const c=document.getElementById('particles'),ctx=c.getContext('2d');
   let w,h,pts=[];
@@ -232,7 +229,6 @@
   })();
 })();
 
-/* ── DOM ────────────────────────────────── */
 const STORAGE_KEY='pure_chat_settings';
 const scrollHost=document.getElementById('scrollHost');
 const messagesEl=document.getElementById('messages');
@@ -246,76 +242,38 @@ const apiKeyEl=document.getElementById('apiKey');
 const baseUrlInput=document.getElementById('baseUrlInput');
 const apiStatus=document.getElementById('apiStatus');
 const emptyHint=document.getElementById('emptyHint');
-let providers={},history=[],waiting=false,scrollY=0;
+let providers={},history=[],waiting=false;
 
-/* ── JS 接管滚动 ───────────────────────── */
-let isDragging=false, dragStart=0, dragStartY=0;
-
-function clamp(v,min,max){return v<min?min:v>max?max:v}
-
-function updateScroll(y){
-  const max=messagesEl.scrollHeight-scrollHost.clientHeight;
-  scrollY=clamp(y,0,max);
-  messagesEl.style.transform=`translateY(${-scrollY}px)`;
-  // 同步自定义滚动条
-  if(max<=0){customBar.style.visibility='hidden';return}
+/* ── 对话区 DOM 滚动条同步 ────────────── */
+function syncBar(){
+  const sh=messagesEl.scrollHeight, ch=messagesEl.clientHeight;
+  if(sh<=ch){customBar.style.visibility='hidden';return}
   customBar.style.visibility='visible';
   const barH=scrollHost.clientHeight;
-  const thH=Math.max(barH/messagesEl.scrollHeight*barH,30);
+  const thH=Math.max(ch/sh*barH,30);
   customThumb.style.height=thH+'px';
-  customThumb.style.top=(scrollY/max*(barH-thH))+'px';
+  const max=sh-ch;
+  customThumb.style.top=(messagesEl.scrollTop/max*(barH-thH))+'px';
 }
+messagesEl.addEventListener('scroll',syncBar);
+new ResizeObserver(syncBar).observe(messagesEl);
 
-scrollHost.addEventListener('wheel',e=>{
-  e.preventDefault();
-  updateScroll(scrollY+e.deltaY);
-},{passive:false});
-
-// 触摸滚动（移动端）
-let touchY=0;
-scrollHost.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY});
-scrollHost.addEventListener('touchmove',e=>{
-  const dy=touchY-e.touches[0].clientY;
-  touchY=e.touches[0].clientY;
-  updateScroll(scrollY+dy);
-},{passive:false});
-
-// 拖拽滚动条
+/* ── 对话区 DOM 滚动条拖拽 ────────────── */
+let isDragging=false,dragStart=0,dragStartTop=0;
 customThumb.addEventListener('pointerdown',e=>{
-  isDragging=true;dragStart=e.clientY;dragStartY=scrollY;
+  isDragging=true;dragStart=e.clientY;dragStartTop=messagesEl.scrollTop;
   customThumb.style.background='rgba(99,102,241,.40)';
   e.preventDefault();
 });
 addEventListener('pointermove',e=>{
   if(!isDragging)return;
-  const max=messagesEl.scrollHeight-scrollHost.clientHeight;
+  const max=messagesEl.scrollHeight-messagesEl.clientHeight;
   const ratio=(e.clientY-dragStart)/(scrollHost.clientHeight-customThumb.offsetHeight);
-  updateScroll(dragStartY+ratio*max);
+  messagesEl.scrollTop=Math.max(0,Math.min(dragStartTop+ratio*max,max));
 });
-addEventListener('pointerup',()=>{
-  isDragging=false;
-  customThumb.style.background='';
-});
+addEventListener('pointerup',()=>{isDragging=false;customThumb.style.background='';});
 
-// 新消息到达时自动滚到底
-const origAppend=messagesEl.appendChild.bind(messagesEl);
-messagesEl.appendChild=function(el){
-  const wasAtBottom=scrollY>=messagesEl.scrollHeight-scrollHost.clientHeight-40;
-  origAppend(el);
-  if(wasAtBottom||messagesEl.children.length<=2){rafScrollBottom()}
-  else{setTimeout(()=>updateScroll(scrollY),50)}
-};
-
-function rafScrollBottom(){
-  requestAnimationFrame(()=>{
-    // 等布局完成
-    requestAnimationFrame(()=>updateScroll(messagesEl.scrollHeight-scrollHost.clientHeight));
-  });
-}
-
-// 窗口大小变化时重新校准
-new ResizeObserver(()=>{updateScroll(scrollY);}).observe(scrollHost);
-addEventListener('resize',()=>updateScroll(scrollY));
+/* ── 输入区 DOM 滚动条 ─────────────────── */
 (function(){
   const ta=inputEl,bar=document.getElementById("inputBar"),th=bar.querySelector(".thumb");
   function s(){
@@ -333,7 +291,6 @@ addEventListener('resize',()=>updateScroll(scrollY));
     ta.style.height=Math.min(ta.scrollHeight,140)+"px";
     setTimeout(s,0);
   });
-  // 拖动输入框滚动条
   let idrag=false,idStart=0,idScroll=0;
   th.addEventListener("pointerdown",e=>{
     idrag=true;idStart=e.clientY;idScroll=ta.scrollTop;
@@ -350,7 +307,7 @@ addEventListener('resize',()=>updateScroll(scrollY));
   s();
 })();
 
-/* ── 提供商 ────────────────────────────── */
+/* ── 提供商 ──────────────────────────── */
 async function loadProviders(){
   try{
     const r=await fetch('/api/providers');
@@ -384,7 +341,7 @@ function saveSettings(){localStorage.setItem(STORAGE_KEY,JSON.stringify({provide
 function onKeyChange(){const p=providers[providerSelect.value]||{};apiStatus.classList.toggle('ok',p.auth==='none'||apiKeyEl.value.trim().length>0);saveSettings()}
 function getSettings(){const id=providerSelect.value,p=providers[id]||{};return{provider:id,model:modelInput.value.trim()||p.default_model,apiKey:apiKeyEl.value.trim(),baseUrl:baseUrlInput.value.trim()||p.base_url}}
 
-/* ── Markdown ──────────────────────────── */
+/* ── Markdown ────────────────────────── */
 function renderMarkdown(t){
   let h=t;
   h=h.replace(/```(\w*)\n([\s\S]*?)```/g,(_,l,c)=>'<pre><code>'+escapeHtml(c.trimEnd())+'</code></pre>');
@@ -398,7 +355,7 @@ function renderMarkdown(t){
 }
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-/* ── 对话 ──────────────────────────────── */
+/* ── 对话 ────────────────────────────── */
 async function send(){
   if(waiting)return;
   const t=inputEl.value.trim();if(!t)return;
@@ -420,14 +377,16 @@ function addMsg(role,text){
   const d=document.createElement('div');d.className='msg '+role;
   if(role==='assistant')d.innerHTML=renderMarkdown(text);else d.textContent=text;
   messagesEl.appendChild(d);
+  messagesEl.scrollTop=messagesEl.scrollHeight;
 }
 function addTyping(){
   const d=document.createElement('div');d.className='msg assistant typing';
   d.innerHTML='<span></span><span></span><span></span>';
   messagesEl.appendChild(d);return d;
 }
-
+inputEl.addEventListener('input',()=>{inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,140)+'px'});
 loadProviders();
+setTimeout(()=>syncBar(),500);
 </script>
 </body>
 </html>
