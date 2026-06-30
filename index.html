@@ -68,25 +68,33 @@
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
   }
 
-  /* ── 消息区域 + 自定义滚动条 ─────────────── */
+  /* ── 消息区域 ─────────────────────────────── */
   .msg-container {
     flex: 1;
-    position: relative;
-    overflow: hidden;
     min-height: 0;
-  }
-  .messages {
-    height: 100%;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 24px 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     scroll-behavior: smooth;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.18) transparent;
   }
-  .messages::-webkit-scrollbar { display: none; }
+  .msg-container::-webkit-scrollbar { width: 5px; }
+  .msg-container::-webkit-scrollbar-track { background: transparent; }
+  .msg-container::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.18);
+    border-radius: 20px;
+  }
+  .msg-container:hover::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.25);
+  }
+
+  .messages {
+    display: contents;
+  }
 
   .msg {
     max-width: 85%;
@@ -316,35 +324,6 @@
   }
   .settings-row .api-status.ok { background: #22c55e; }
 
-  /* ── 自定义滚动条 ────────────────────────── */
-  .custom-scrollbar {
-    position: absolute;
-    right: 2px;
-    top: 8px;
-    bottom: 8px;
-    width: 5px;
-    z-index: 30;
-    pointer-events: none;
-  }
-  .custom-scrollbar-track {
-    position: absolute;
-    inset: 0;
-    border-radius: 20px;
-    background: transparent;
-  }
-  .custom-scrollbar-thumb {
-    position: absolute;
-    left: 0;
-    right: 0;
-    border-radius: 20px;
-    min-height: 30px;
-    background: rgba(99, 102, 241, 0.18);
-    transition: background 0.2s;
-  }
-  .msg-container:hover .custom-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.35);
-  }
-
   #modelInput { flex: 1.5; }
   #apiKey { flex: 2.5; }
   #baseUrlInput { flex: 3; }
@@ -388,9 +367,6 @@
         <p>Pure Chat</p>
         <p style="font-size:0.75rem; opacity:0.6">零注入 · 多 API · 纯对话</p>
       </div>
-    </div>
-    <div class="custom-scrollbar" id="customScrollbar">
-      <div class="custom-scrollbar-thumb" id="scrollThumb"></div>
     </div>
   </div>
 
@@ -477,6 +453,7 @@
      设置管理
      ═══════════════════════════════════════════ */
   const STORAGE_KEY = 'pure_chat_settings';
+  const msgContainer = document.getElementById('msgContainer');
   const messagesEl = document.getElementById('messages');
   const inputEl = document.getElementById('userInput');
   const btnSend = document.getElementById('btnSend');
@@ -703,7 +680,7 @@
     waiting = false;
     btnSend.disabled = false;
     inputEl.focus();
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    msgContainer.scrollTop = msgContainer.scrollHeight;
   }
 
   function addMsg(role, text) {
@@ -715,7 +692,7 @@
       div.textContent = text;
     }
     messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    msgContainer.scrollTop = msgContainer.scrollHeight;
     return div;
   }
 
@@ -724,7 +701,7 @@
     div.className = 'msg assistant typing';
     div.innerHTML = '<span></span><span></span><span></span>';
     messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    msgContainer.scrollTop = msgContainer.scrollHeight;
     return div;
   }
 
@@ -732,29 +709,6 @@
     inputEl.style.height = 'auto';
     inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
   });
-
-  /* ═══════════════════════════════════════════
-     自定义滚动条同步
-     ═══════════════════════════════════════════ */
-  const scrollThumb = document.getElementById('scrollThumb');
-
-  function syncScrollbar() {
-    const el = messagesEl;
-    const ratio = el.clientHeight / el.scrollHeight;
-    if (ratio >= 1) {
-      scrollThumb.style.display = 'none';
-      return;
-    }
-    scrollThumb.style.display = '';
-    scrollThumb.style.height = Math.max(ratio * 100, 8) + '%';
-    const scrollRatio = el.scrollTop / (el.scrollHeight - el.clientHeight);
-    const trackSpace = 100 - parseFloat(scrollThumb.style.height);
-    scrollThumb.style.top = (scrollRatio * trackSpace) + '%';
-  }
-
-  messagesEl.addEventListener('scroll', syncScrollbar);
-  const obs = new ResizeObserver(syncScrollbar);
-  obs.observe(messagesEl);
 
   // 启动
   loadProviders();
