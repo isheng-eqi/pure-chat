@@ -465,7 +465,6 @@
   let history = [];
   let waiting = false;
 
-  // 加载提供商列表
   async function loadProviders() {
     try {
       const resp = await fetch('/api/providers');
@@ -492,45 +491,62 @@
     if (settings.provider && settings.provider in providers) {
       providerSelect.value = settings.provider;
     }
-    onProviderChange(); // 设置 model placeholder + base_url 显隐
 
     const p = providers[providerSelect.value] || {};
     modelInput.value = settings.model || p.default_model || '';
-    if (!modelInput.value && p.default_model) {
-      modelInput.value = p.default_model;
-    }
     apiKeyEl.value = settings.apiKey || '';
     baseUrlInput.value = settings.baseUrl || '';
 
+    onProviderChange();
     onKeyChange();
   }
 
   function onProviderChange() {
     const p = providers[providerSelect.value] || {};
+    const auth = p.auth || 'bearer';
+
+    // 模型名：自动填充 + 可手动改
     modelInput.placeholder = p.default_model || '输入模型名';
-    modelInput.value = p.default_model || modelInput.value;
-    if (providerSelect.value === 'custom') {
-      baseUrlInput.style.display = '';
-      baseUrlInput.placeholder = 'https://api.xxx.com/v1';
+    if (!modelInput.value) modelInput.value = p.default_model || '';
+
+    // API Key：无鉴权时隐藏，有鉴权时根据类型换 placeholder
+    if (auth === 'none') {
+      apiKeyEl.style.display = 'none';
+      apiStatus.style.display = 'none';
     } else {
-      baseUrlInput.style.display = 'none';
+      apiKeyEl.style.display = '';
+      apiStatus.style.display = '';
+      const hints = {
+        'bearer': 'API Key',
+        'x-api-key': 'Anthropic API Key',
+        'query': 'Google API Key',
+      };
+      apiKeyEl.placeholder = hints[auth] || 'API Key';
     }
+
+    // Base URL：Ollama 和自定义 需要显示
+    const showBase = (providerSelect.value === 'custom' || providerSelect.value === 'ollama');
+    baseUrlInput.style.display = showBase ? '' : 'none';
+    if (showBase && !baseUrlInput.placeholder) {
+      baseUrlInput.placeholder = p.base_url || 'https://api.xxx.com/v1';
+    }
+
     saveSettings();
   }
 
   function saveSettings() {
-    const settings = {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
       provider: providerSelect.value,
       model: modelInput.value,
       apiKey: apiKeyEl.value,
       baseUrl: baseUrlInput.value,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }));
   }
 
   function onKeyChange() {
-    const key = apiKeyEl.value.trim();
-    apiStatus.classList.toggle('ok', key.length > 0);
+    const p = providers[providerSelect.value] || {};
+    const ok = (p.auth === 'none') || apiKeyEl.value.trim().length > 0;
+    apiStatus.classList.toggle('ok', ok);
     saveSettings();
   }
 
@@ -611,8 +627,10 @@
     if (!text) return;
 
     const s = getSettings();
-    if (!s.apiKey) {
-      addMsg('assistant', '⚠️ 请先在底部输入 API Key。');
+    const p = providers[s.provider] || {};
+
+    if (p.auth !== 'none' && !s.apiKey) {
+      addMsg('assistant', '⚠️ 请先设置 API Key。');
       return;
     }
 
@@ -637,7 +655,7 @@
         body: JSON.stringify({
           provider: s.provider,
           model: s.model,
-          base_url: s.provider === 'custom' ? s.baseUrl : '',
+          base_url: (s.provider === 'custom' || s.provider === 'ollama') ? s.baseUrl : '',
           messages: history,
         }),
       });
