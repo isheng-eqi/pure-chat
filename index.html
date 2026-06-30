@@ -36,16 +36,19 @@ body{
   display:flex;flex-direction:column;
 }
 
-.scroll-host{flex:1;min-height:0;position:relative}
+.scroll-host{flex:1;min-height:0;position:relative;overflow:hidden}
 
 .messages{
-  height:100%;overflow-y:auto;overflow-x:hidden;
-  padding:24px 24px 24px 24px;
+  height:100%;overflow-y:scroll;overflow-x:hidden;
+  width:calc(100% + 18px);
+  padding:24px 42px 24px 24px;
   display:flex;flex-direction:column;gap:16px;
   scroll-behavior:smooth;
-  scrollbar-width:none;-ms-overflow-style:none;
 }
-.messages::-webkit-scrollbar{display:none}
+/* 原生滚动条推出画面（被scroll-host的overflow:hidden裁剪），自定义DOM条留在视野内 */
+.messages::-webkit-scrollbar{width:14px}
+.messages::-webkit-scrollbar-thumb{background:transparent}
+.messages::-webkit-scrollbar-track{background:transparent}
 
 #customBar{
   position:absolute;right:3px;top:12px;bottom:12px;
