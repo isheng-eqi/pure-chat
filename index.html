@@ -9,6 +9,9 @@
 <title>Pure Chat</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  /* 核武器：全页面禁止原生滚动条渲染 */
+  html,body,*{scrollbar-width:none!important;-ms-overflow-style:none!important}
+  html::-webkit-scrollbar,body::-webkit-scrollbar,*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:#0a0a0f;color:#e0e0e0;height:100vh;overflow:hidden;
@@ -125,7 +128,7 @@
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
     border-radius:14px;color:#e0e0e0;font-size:.95rem;font-family:inherit;
     line-height:1.5;padding:10px 14px;outline:none;
-    min-height:44px;max-height:140px;transition:border-color .2s;
+    min-height:44px;max-height:140px;overflow:hidden;transition:border-color .2s;
   }
   .input-area textarea:focus{border-color:rgba(99,102,241,.4)}
   .input-area textarea::placeholder{color:rgba(255,255,255,.2)}
@@ -187,7 +190,7 @@
         <div class="dot"></div>
         <p>Pure Chat</p>
         <p style="font-size:.75rem;opacity:.6">零注入 · 多 API · 纯对话</p>
-        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v6 · overflow hidden + JS scroll · [如果看到灰白滚动条说明浏览器加载的是旧版缓存]</p>
+        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v7 · 全局禁用原生滚动条 · [本页面不应存在任何系统滚动条]</p>
       </div>
     </div>
     <div id="customBar"><div class="thumb"></div></div>
