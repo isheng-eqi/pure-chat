@@ -53,7 +53,7 @@
   /* ── 自定义滚动条（DOM元素，真正的div） ── */
   #customBar{
     position:absolute;right:3px;top:12px;bottom:12px;
-    width:4px;z-index:30;visibility:hidden;border-radius:10px;
+    width:4px;z-index:30;border-radius:10px;
   }
   #customBar.show{visibility:visible}
   #customBar .thumb{
@@ -190,7 +190,7 @@
         <div class="dot"></div>
         <p>Pure Chat</p>
         <p style="font-size:.75rem;opacity:.6">零注入 · 多 API · 纯对话</p>
-        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v7 · 全局禁用原生滚动条 · [本页面不应存在任何系统滚动条]</p>
+        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v8 · overflow:hidden + JS scroll + 滚动条始终可见</p>
       </div>
     </div>
     <div id="customBar"><div class="thumb"></div></div>
@@ -297,7 +297,8 @@ const origAppend=messagesEl.appendChild.bind(messagesEl);
 messagesEl.appendChild=function(el){
   const wasAtBottom=scrollY>=messagesEl.scrollHeight-scrollHost.clientHeight-40;
   origAppend(el);
-  if(wasAtBottom||messagesEl.children.length<=2)rafScrollBottom();
+  if(wasAtBottom||messagesEl.children.length<=2){rafScrollBottom()}
+  else{setTimeout(()=>updateScroll(scrollY),50)}
 };
 
 function rafScrollBottom(){
@@ -308,7 +309,7 @@ function rafScrollBottom(){
 }
 
 // 窗口大小变化时重新校准
-new ResizeObserver(()=>updateScroll(scrollY)).observe(messagesEl);
+new ResizeObserver(()=>{updateScroll(scrollY);}).observe(scrollHost);
 addEventListener('resize',()=>updateScroll(scrollY));
 
 /* ── 提供商 ────────────────────────────── */
