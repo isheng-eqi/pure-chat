@@ -37,12 +37,12 @@
     display:flex;flex-direction:column;
   }
 
-  /* ── 滚动宿主（overflow:hidden + JS接管滚动）── */
   .scroll-host{
     flex:1;min-height:0;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;
   }
   .messages{
-    height:100%;overflow:hidden;
+    min-height:100%;overflow:hidden;
     padding:24px 20px 24px 24px;
     display:flex;flex-direction:column;gap:16px;
   }
