@@ -54,7 +54,7 @@
   }
     #customBar .thumb{
     position:absolute;left:0;right:0;min-height:24px;border-radius:10px;
-    background:rgba(99,102,241,.15);
+    background:rgba(99,102,241,.15);cursor:pointer;
     transition:background .25s;
   }
   .scroll-host:hover #customBar .thumb{background:rgba(99,102,241,.30)}
@@ -131,8 +131,8 @@
   .input-area textarea::-webkit-scrollbar{display:none}
   .input-area textarea:focus{border-color:rgba(99,102,241,.4)}
   .input-area textarea::placeholder{color:rgba(255,255,255,.2)}
-  .input-bar{position:absolute;right:3px;top:8px;bottom:8px;width:4px;border-radius:10px}
-  .input-bar .thumb{position:absolute;left:0;right:0;min-height:24px;border-radius:10px;background:rgba(99,102,241,.15);transition:background .25s}
+  .input-bar{position:absolute;right:3px;top:8px;bottom:8px;width:4px;border-radius:10px;pointer-events:auto}
+  .input-bar .thumb{position:absolute;left:0;right:0;min-height:24px;border-radius:10px;background:rgba(99,102,241,.15);transition:background .25s;cursor:pointer}
   .input-container:hover .input-bar .thumb{background:rgba(99,102,241,.30)}
 
   .btn-send{
@@ -333,6 +333,20 @@ addEventListener('resize',()=>updateScroll(scrollY));
     ta.style.height=Math.min(ta.scrollHeight,140)+"px";
     setTimeout(s,0);
   });
+  // 拖动输入框滚动条
+  let idrag=false,idStart=0,idScroll=0;
+  th.addEventListener("pointerdown",e=>{
+    idrag=true;idStart=e.clientY;idScroll=ta.scrollTop;
+    th.style.background="rgba(99,102,241,.40)";
+    e.preventDefault();e.stopPropagation();
+  });
+  addEventListener("pointermove",e=>{
+    if(!idrag)return;
+    const max=ta.scrollHeight-ta.clientHeight;
+    const ratio=(e.clientY-idStart)/(ta.clientHeight-th.offsetHeight);
+    ta.scrollTop=Math.max(0,Math.min(idScroll+ratio*max,max));
+  });
+  addEventListener("pointerup",()=>{idrag=false;th.style.background="";});
   s();
 })();
 
