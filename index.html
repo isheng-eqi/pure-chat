@@ -78,26 +78,20 @@
     gap: 16px;
     scroll-behavior: smooth;
   }
-  /* 滚动条 —— 玻璃 UI 风格 */
+  /* 滚动条 —— 融入玻璃 UI，不割裂 */
   .messages {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.1) transparent;
+    scrollbar-color: rgba(99, 102, 241, 0.18) transparent;
   }
-  .messages::-webkit-scrollbar { width: 6px; }
-  .messages::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 8px 0;
-  }
+  .messages::-webkit-scrollbar { width: 5px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
   .messages::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.12);
+    background: rgba(99, 102, 241, 0.18);
     border-radius: 20px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-    min-height: 40px;
+    transition: background 0.3s;
   }
   .messages::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.22);
-    background-clip: content-box;
+    background: rgba(99, 102, 241, 0.35);
   }
   .messages::-webkit-scrollbar-button { display: none; }
 
@@ -135,6 +129,14 @@
     margin: 0.6em 0;
     font-size: 0.85rem;
     line-height: 1.5;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.18) transparent;
+  }
+  .msg pre::-webkit-scrollbar { height: 4px; }
+  .msg pre::-webkit-scrollbar-track { background: transparent; }
+  .msg pre::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.18);
+    border-radius: 20px;
   }
   .msg pre code {
     background: none;
