@@ -189,7 +189,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     # ── OpenAI 兼容格式 ───────────────────────────────
     def _build_openai(self, base_url, model, messages, api_key):
-        payload = {"model": model, "messages": messages, "stream": False}
+        payload = {"model": model, "messages": messages, "stream": False, "max_tokens": 16384}
         url = base_url.rstrip("/") + "/chat/completions"
         headers = {"Content-Type": "application/json"}
         if api_key:
@@ -204,7 +204,7 @@ class Handler(SimpleHTTPRequestHandler):
     def _build_anthropic(self, base_url, model, messages, api_key):
         payload = {
             "model": model,
-            "max_tokens": 4096,
+            "max_tokens": 16384,
             "messages": messages,
         }
         url = base_url.rstrip("/") + "/v1/messages"
