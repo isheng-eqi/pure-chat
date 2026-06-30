@@ -489,8 +489,8 @@
       settings = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     } catch (e) {}
 
-    const provider = settings.provider || 'deepseek';
-    providerSelect.value = provider in providers ? provider : 'deepseek';
+    const provider = settings.provider || 'openai';
+    providerSelect.value = provider in providers ? provider : 'openai';
     onProviderChange(); // 设置 model placeholder + base_url 显隐
 
     const p = providers[providerSelect.value] || {};

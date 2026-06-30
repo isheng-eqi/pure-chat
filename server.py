@@ -163,6 +163,13 @@ class Handler(SimpleHTTPRequestHandler):
         return ""
 
     # ── 工具方法 ───────────────────────────────────────
+    def end_headers(self):
+        # 禁止浏览器缓存，确保每次都是最新版本
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     def _json(self, status, data):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
