@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pure Chat</title>
+<style>
+  /* ═══════════════════════════════════════════
+     第 0 层：3D 背景（纯 CSS，零依赖）
+     ═══════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0a0a0f;
+    color: #e0e0e0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+    animation: bg-drift 20s ease-in-out infinite alternate;
+  }
+
+  .bg-particles {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  @keyframes bg-drift {
+    0%   { opacity: 0.8; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.9; }
+  }
+
+  /* ═══════════════════════════════════════════
+     第 1 层：玻璃 UI
+     ═══════════════════════════════════════════ */
+  .chat-wrapper {
+    position: relative;
+    z-index: 10;
+    width: min(720px, 94vw);
+    height: min(88vh, 800px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .glass {
+    background: rgba(15, 15, 25, 0.55);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ── 消息区域 ─────────────────────────────── */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+  }
+
+  .msg {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    animation: msg-in 0.3s ease-out;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.assistant {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* ── 加载指示器 ────────────────────────────── */
+  .typing {
+    align-self: flex-start;
+    padding: 14px 18px;
+    display: flex;
+    gap: 4px;
+  }
+  .typing span {
+    width: 6px; height: 6px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+  }
+
+  /* ── 空状态 ────────────────────────────────── */
+  .empty-hint {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.25;
+    gap: 8px;
+    user-select: none;
+  }
+  .empty-hint .dot {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: rgba(99,102,241,0.3);
+    margin-bottom: 12px;
+  }
+  .empty-hint p { font-size: 0.9rem; letter-spacing: 0.03em; }
+
+  /* ── 输入区域 ──────────────────────────────── */
+  .input-area {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .input-area textarea {
+    flex: 1;
+    resize: none;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    font-family: inherit;
+    line-height: 1.5;
+    padding: 10px 14px;
+    outline: none;
+    min-height: 44px;
+    max-height: 140px;
+    transition: border-color 0.2s;
+  }
+  .input-area textarea:focus {
+    border-color: rgba(99,102,241,0.4);
+  }
+  .input-area textarea::placeholder { color: rgba(255,255,255,0.2); }
+
+  .btn-send {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.15);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+  }
+  .btn-send:hover {
+    background: rgba(99,102,241,0.25);
+    border-color: rgba(99,102,241,0.5);
+  }
+  .btn-send:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* ── 底部设置行 ────────────────────────────── */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px 12px;
+  }
+  .settings-row select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.78rem;
+    padding: 7px 8px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.3)'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+    min-width: 0;
+  }
+  .settings-row select:focus {
+    border-color: rgba(99,102,241,0.3);
+  }
+  .settings-row select option {
+    background: #1a1a2e;
+    color: #e0e0e0;
+  }
+  .settings-row input {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.78rem;
+    padding: 8px 10px;
+    outline: none;
+    font-family: monospace;
+    letter-spacing: 0.02em;
+    transition: border-color 0.2s;
+    min-width: 0;
+  }
+  .settings-row input:focus {
+    border-color: rgba(99,102,241,0.3);
+    color: rgba(255,255,255,0.7);
+  }
+  .settings-row input::placeholder { color: rgba(255,255,255,0.12); }
+  .settings-row .api-status {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: #ef4444;
+    transition: background 0.3s;
+  }
+  .settings-row .api-status.ok { background: #22c55e; }
+
+  #modelInput { flex: 1.5; }
+  #apiKey { flex: 2.5; }
+  #baseUrlInput { flex: 3; }
+
+  /* ── 响应式 ────────────────────────────────── */
+  @media (max-width: 600px) {
+    .chat-wrapper { width: 100vw; height: 100vh; border-radius: 0; }
+    .glass { border-radius: 0; border: none; }
+    .msg { max-width: 92%; font-size: 0.9rem; }
+    .settings-row { flex-wrap: wrap; }
+    #baseUrlInput { width: 100%; }
+  }
+
+  /* ── 无障碍 ────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .bg-layer { animation: none; }
+    .msg { animation: none; }
+    .typing span { animation: none; }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: rgba(20,20,30,0.95);
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- 背景层 -->
+<div class="bg-layer"></div>
+<canvas class="bg-particles" id="particles"></canvas>
+
+<!-- 对话卡片 -->
+<div class="chat-wrapper glass">
+  <!-- 消息列表 -->
+  <div class="messages" id="messages">
+    <div class="empty-hint" id="emptyHint">
+      <div class="dot"></div>
+      <p>Pure Chat</p>
+      <p style="font-size:0.75rem; opacity:0.6">零注入 · 多 API · 纯对话</p>
+    </div>
+  </div>
+
+  <!-- 输入区 -->
+  <div class="input-area">
+    <textarea id="userInput" rows="1"
+      placeholder="发送消息…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+    <button class="btn-send" id="btnSend" onclick="send()" title="发送 (Enter)">
+      ↑
+    </button>
+  </div>
+
+  <!-- 设置行：提供商 | 模型 | API Key | base_url(仅自定义) -->
+  <div class="settings-row">
+    <select id="providerSelect" onchange="onProviderChange()"></select>
+    <input type="text" id="modelInput" placeholder="模型名"
+      oninput="saveSettings()" spellcheck="false" autocomplete="off">
+    <input type="password" id="apiKey" placeholder="API Key"
+      oninput="onKeyChange()">
+    <input type="text" id="baseUrlInput" placeholder="https://api.xxx.com/v1"
+      style="display:none" oninput="saveSettings()" spellcheck="false" autocomplete="off">
+    <div class="api-status" id="apiStatus" title="API Key 状态"></div>
+  </div>
+</div>
+
+<script>
+  /* ═══════════════════════════════════════════
+     粒子背景 (Canvas, 零依赖)
+     ═══════════════════════════════════════════ */
+  (function() {
+    const c = document.getElementById('particles');
+    const ctx = c.getContext('2d');
+    let w, h, pts = [];
+
+    function resize() {
+      w = c.width = window.innerWidth;
+      h = c.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    for (let i = 0; i < 60; i++) {
+      pts.push({
+        x: Math.random() * w, y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        r: Math.random() * 1.2 + 0.3,
+        a: Math.random() * 0.5 + 0.2,
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(99,102,241,${p.a})`;
+        ctx.fill();
+      }
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d < 120) {
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = `rgba(99,102,241,${0.06 * (1 - d/120)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  /* ═══════════════════════════════════════════
+     设置管理
+     ═══════════════════════════════════════════ */
+  const STORAGE_KEY = 'pure_chat_settings';
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('userInput');
+  const btnSend = document.getElementById('btnSend');
+  const providerSelect = document.getElementById('providerSelect');
+  const modelInput = document.getElementById('modelInput');
+  const apiKeyEl = document.getElementById('apiKey');
+  const baseUrlInput = document.getElementById('baseUrlInput');
+  const apiStatus = document.getElementById('apiStatus');
+  const emptyHint = document.getElementById('emptyHint');
+
+  let providers = {};
+  let history = [];
+  let waiting = false;
+
+  // 加载提供商列表
+  async function loadProviders() {
+    try {
+      const resp = await fetch('/api/providers');
+      providers = await resp.json();
+      providerSelect.innerHTML = '';
+      for (const [id, p] of Object.entries(providers)) {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = p.name;
+        providerSelect.appendChild(opt);
+      }
+      restoreSettings();
+    } catch (e) {
+      setTimeout(loadProviders, 2000);
+    }
+  }
+
+  function restoreSettings() {
+    let settings = {};
+    try {
+      settings = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch (e) {}
+
+    const provider = settings.provider || 'deepseek';
+    providerSelect.value = provider in providers ? provider : 'deepseek';
+    onProviderChange(); // 设置 model placeholder + base_url 显隐
+
+    const p = providers[providerSelect.value] || {};
+    modelInput.value = settings.model || p.default_model || '';
+    if (!modelInput.value && p.default_model) {
+      modelInput.value = p.default_model;
+    }
+    apiKeyEl.value = settings.apiKey || '';
+    baseUrlInput.value = settings.baseUrl || '';
+
+    onKeyChange();
+  }
+
+  function onProviderChange() {
+    const p = providers[providerSelect.value] || {};
+    modelInput.placeholder = p.default_model || '输入模型名';
+    modelInput.value = p.default_model || modelInput.value;
+    if (providerSelect.value === 'custom') {
+      baseUrlInput.style.display = '';
+      baseUrlInput.placeholder = 'https://api.xxx.com/v1';
+    } else {
+      baseUrlInput.style.display = 'none';
+    }
+    saveSettings();
+  }
+
+  function saveSettings() {
+    const settings = {
+      provider: providerSelect.value,
+      model: modelInput.value,
+      apiKey: apiKeyEl.value,
+      baseUrl: baseUrlInput.value,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  }
+
+  function onKeyChange() {
+    const key = apiKeyEl.value.trim();
+    apiStatus.classList.toggle('ok', key.length > 0);
+    saveSettings();
+  }
+
+  function getSettings() {
+    const id = providerSelect.value;
+    const p = providers[id] || {};
+    return {
+      provider: id,
+      model: modelInput.value.trim() || p.default_model,
+      apiKey: apiKeyEl.value.trim(),
+      baseUrl: baseUrlInput.value.trim() || p.base_url,
+    };
+  }
+
+  /* ═══════════════════════════════════════════
+     对话逻辑
+     ═══════════════════════════════════════════ */
+  async function send() {
+    if (waiting) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    const s = getSettings();
+    if (!s.apiKey) {
+      addMsg('assistant', '⚠️ 请先在底部输入 API Key。');
+      return;
+    }
+
+    if (emptyHint) emptyHint.remove();
+
+    addMsg('user', text);
+    history.push({ role: 'user', content: text });
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    btnSend.disabled = true;
+    waiting = true;
+
+    const typingEl = addTyping();
+
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': s.apiKey,
+        },
+        body: JSON.stringify({
+          provider: s.provider,
+          model: s.model,
+          base_url: s.provider === 'custom' ? s.baseUrl : '',
+          messages: history,
+        }),
+      });
+
+      const data = await resp.json();
+      typingEl.remove();
+
+      if (data.error) {
+        addMsg('assistant', `❌ ${data.error}`);
+      } else {
+        addMsg('assistant', data.reply);
+        history.push({ role: 'assistant', content: data.reply });
+      }
+    } catch (e) {
+      typingEl.remove();
+      addMsg('assistant', `❌ 网络错误: ${e.message}`);
+    }
+
+    waiting = false;
+    btnSend.disabled = false;
+    inputEl.focus();
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addMsg(role, text) {
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'msg assistant typing';
+    div.innerHTML = '<span></span><span></span><span></span>';
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+  });
+
+  // 启动
+  loadProviders();
+</script>
+</body>
+</html>
