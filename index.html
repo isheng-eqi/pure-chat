@@ -325,10 +325,7 @@
     width: 5px;
     z-index: 30;
     pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
   }
-  .msg-container:hover .custom-scrollbar { opacity: 1; }
   .custom-scrollbar-track {
     position: absolute;
     inset: 0;
@@ -341,10 +338,12 @@
     right: 0;
     border-radius: 20px;
     min-height: 30px;
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(99, 102, 241, 0.18);
     transition: background 0.2s;
   }
-  .custom-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.45); }
+  .msg-container:hover .custom-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.35);
+  }
 
   #modelInput { flex: 1.5; }
   #apiKey { flex: 2.5; }
