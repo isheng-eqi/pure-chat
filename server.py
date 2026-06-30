@@ -89,8 +89,11 @@ class Handler(SimpleHTTPRequestHandler):
         length = int(self.headers.get("content-length", 0))
         body = json.loads(self.rfile.read(length))
 
-        provider_id = body.get("provider", "deepseek")
-        provider = PROVIDERS.get(provider_id, PROVIDERS["deepseek"])
+        provider_id = body.get("provider", "")
+        provider = PROVIDERS.get(provider_id)
+        if not provider:
+            self._json(400, {"error": "请选择一个 API 提供商"})
+            return
         base_url = body.get("base_url") or provider["base_url"]
         model = body.get("model") or provider["default_model"]
         messages = body.get("messages", [])
