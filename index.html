@@ -52,8 +52,7 @@
     position:absolute;right:3px;top:12px;bottom:12px;
     width:4px;z-index:30;border-radius:10px;
   }
-  #customBar.show{visibility:visible}
-  #customBar .thumb{
+    #customBar .thumb{
     position:absolute;left:0;right:0;min-height:24px;border-radius:10px;
     background:rgba(99,102,241,.15);
     transition:background .25s;
@@ -120,18 +119,21 @@
     padding:16px 20px;border-top:1px solid rgba(255,255,255,.06);
     display:flex;gap:10px;align-items:flex-end;
   }
+  .input-container{flex:1;position:relative;max-height:140px}
   .input-area textarea{
-    flex:1;resize:none;
+    width:100%;height:100%;resize:none;
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
     border-radius:14px;color:#e0e0e0;font-size:.95rem;font-family:inherit;
-    line-height:1.5;padding:10px 14px;outline:none;
-    min-height:44px;max-height:140px;overflow-y:auto;transition:border-color .2s;
+    line-height:1.5;padding:10px 27px 10px 14px;outline:none;
+    min-height:44px;overflow-y:auto;transition:border-color .2s;
+    scrollbar-width:none;-ms-overflow-style:none;
   }
+  .input-area textarea::-webkit-scrollbar{display:none}
   .input-area textarea:focus{border-color:rgba(99,102,241,.4)}
   .input-area textarea::placeholder{color:rgba(255,255,255,.2)}
-.input-area textarea::-webkit-scrollbar{width:4px}
-.input-area textarea::-webkit-scrollbar-track{background:transparent}
-.input-area textarea::-webkit-scrollbar-thumb{background:rgba(99,102,241,.2);border-radius:10px}
+  .input-bar{position:absolute;right:3px;top:8px;bottom:8px;width:4px;border-radius:10px}
+  .input-bar .thumb{position:absolute;left:0;right:0;min-height:24px;border-radius:10px;background:rgba(99,102,241,.15);transition:background .25s}
+  .input-container:hover .input-bar .thumb{background:rgba(99,102,241,.30)}
 
   .btn-send{
     width:44px;height:44px;border-radius:14px;
@@ -190,15 +192,18 @@
         <div class="dot"></div>
         <p>Pure Chat</p>
         <p style="font-size:.75rem;opacity:.6">零注入 · 多 API · 纯对话</p>
-        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v10 · textarea DOM滚动条，和对话框一致滚动条</p>
+        <p style="font-size:.6rem;opacity:.4;margin-top:12px;font-family:monospace;color:#6366f1">v11 · 两处滚动条hover一致，不需要时自动隐藏</p>
       </div>
     </div>
     <div id="customBar"><div class="thumb"></div></div>
   </div>
 
   <div class="input-area">
-    <textarea id="userInput" rows="1" placeholder="发送消息…"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+    <div class="input-container">
+      <textarea id="userInput" rows="1" placeholder="发送消息…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+      <div class="input-bar" id="inputBar"><div class="thumb"></div></div>
+    </div>
     <button class="btn-send" id="btnSend" onclick="send()">↑</button>
   </div>
 
@@ -253,8 +258,8 @@ function updateScroll(y){
   scrollY=clamp(y,0,max);
   messagesEl.style.transform=`translateY(${-scrollY}px)`;
   // 同步自定义滚动条
-  if(max<=0){customBar.classList.remove('show');return}
-  customBar.classList.add('show');
+  if(max<=0){customBar.style.visibility='hidden';return}
+  customBar.style.visibility='visible';
   const barH=scrollHost.clientHeight;
   const thH=Math.max(barH/messagesEl.scrollHeight*barH,30);
   customThumb.style.height=thH+'px';
@@ -315,7 +320,8 @@ addEventListener('resize',()=>updateScroll(scrollY));
   const ta=inputEl,bar=document.getElementById("inputBar"),th=bar.querySelector(".thumb");
   function s(){
     let sh=ta.scrollHeight,ch=ta.clientHeight;
-    if(sh<=ch){th.style.height="100%%";th.style.top="0";return}
+    if(sh<=ch){bar.style.visibility="hidden";return}
+    bar.style.visibility="visible";
     let bh=ch,h=Math.max(bh/sh*bh,20);
     th.style.height=h+"px";
     th.style.top=(ta.scrollTop/(sh-ch)*(bh-h))+"px";
