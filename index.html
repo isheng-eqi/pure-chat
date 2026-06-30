@@ -78,11 +78,28 @@
     gap: 16px;
     scroll-behavior: smooth;
   }
-  .messages::-webkit-scrollbar { width: 4px; }
-  .messages::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.08);
-    border-radius: 2px;
+  /* 滚动条 —— 玻璃 UI 风格 */
+  .messages {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
   }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+  }
+  .messages::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    min-height: 40px;
+  }
+  .messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.22);
+    background-clip: content-box;
+  }
+  .messages::-webkit-scrollbar-button { display: none; }
 
   .msg {
     max-width: 85%;
@@ -92,7 +109,50 @@
     line-height: 1.6;
     animation: msg-in 0.3s ease-out;
     word-break: break-word;
-    white-space: pre-wrap;
+  }
+
+  /* Markdown 渲染 */
+  .msg p { margin: 0 0 0.5em; }
+  .msg p:last-child { margin-bottom: 0; }
+  .msg h2 { font-size: 1.15rem; font-weight: 600; margin: 1em 0 0.4em; color: #fff; }
+  .msg h3 { font-size: 1.05rem; font-weight: 600; margin: 1em 0 0.4em; color: rgba(255,255,255,0.9); }
+  .msg h4 { font-size: 1rem; font-weight: 600; margin: 0.8em 0 0.3em; }
+  .msg strong { color: rgba(255,255,255,0.95); }
+  .msg em { color: rgba(255,255,255,0.8); }
+  .msg code {
+    background: rgba(255,255,255,0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  .msg pre {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 0.6em 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .msg pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+  }
+  .msg ul, .msg ol { margin: 0.4em 0; padding-left: 1.4em; }
+  .msg li { margin: 0.2em 0; }
+  .msg hr {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin: 1em 0;
+  }
+  .msg blockquote {
+    border-left: 2px solid rgba(99,102,241,0.4);
+    margin: 0.6em 0;
+    padding-left: 12px;
+    color: rgba(255,255,255,0.6);
   }
   @keyframes msg-in {
     from { opacity: 0; transform: translateY(8px); }
@@ -483,6 +543,63 @@
   }
 
   /* ═══════════════════════════════════════════
+     Markdown 渲染（零依赖，纯 JS）
+     ═══════════════════════════════════════════ */
+  function renderMarkdown(text) {
+    let html = text;
+
+    // 代码块（```...```）—— 先处理，保护内部不被后续规则破坏
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      return '<pre><code>' + escapeHtml(code.trimEnd()) + '</code></pre>';
+    });
+
+    // 行内代码（`...`）
+    html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    // 标题（## Heading）
+    html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+    // 粗体 / 斜体
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // 水平线
+    html = html.replace(/^---$/gm, '<hr>');
+
+    // 引用（> text）
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+    // 无序列表（- item 或 * item）
+    html = html.replace(/^(\s*)[-*] (.+)$/gm, '$1<li>$2</li>');
+    // 有序列表（1. item）
+    html = html.replace(/^(\s*)\d+\. (.+)$/gm, '$1<li>$2</li>');
+    // 包装连续的 <li> 为 <ul>
+    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+    // 段落：连续两行空行 → 分段
+    // 非块级元素的行用 <p> 包裹
+    const blocks = html.split(/\n\n+/);
+    html = blocks.map(block => {
+      block = block.trim();
+      if (!block) return '';
+      // 已经是块级元素就不包 <p>
+      if (/^<(h[2-4]|pre|ul|ol|blockquote|hr)/.test(block)) return block;
+      // 单换行 → <br>
+      return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
+    }).join('\n');
+
+    return html;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* ═══════════════════════════════════════════
      对话逻辑
      ═══════════════════════════════════════════ */
   async function send() {
@@ -545,7 +662,11 @@
   function addMsg(role, text) {
     const div = document.createElement('div');
     div.className = `msg ${role}`;
-    div.textContent = text;
+    if (role === 'assistant') {
+      div.innerHTML = renderMarkdown(text);
+    } else {
+      div.textContent = text;
+    }
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return div;
