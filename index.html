@@ -44,26 +44,27 @@
     display: flex; flex-direction: column;
   }
 
-  /* ── 消息列表 — 自己滚动 + 自己带滚动条样式 ── */
+  /* ── 消息列表 ──────────────────────────── */
   .messages {
     flex: 1; min-height: 0;
-    overflow-y: auto; overflow-x: hidden;
+    overflow-y: scroll; overflow-x: hidden;
     padding: 24px 20px;
     display: flex; flex-direction: column; gap: 16px;
     scroll-behavior: smooth;
   }
+  /* 彻底杀掉原生滚动条 — 所有浏览器 */
+  .messages::-webkit-scrollbar { display: none; width: 0; height: 0; background: transparent; }
+  .messages { scrollbar-width: none; -ms-overflow-style: none; }
 
-  /* Firefox 原生 */
-  .messages {
-    scrollbar-width: thin;
-    scrollbar-color: #6366f128 transparent;
+  /* ── 自定义滚动条（真实 DOM，不依赖浏览器伪元素）── */
+  #customBar {
+    position: absolute; top: 0; bottom: 60px; right: 2px;
+    width: 5px; z-index: 30; pointer-events: none; border-radius: 20px;
   }
-
-  /* Chrome / Edge — 必须够特异度，Windows 才吃 */
-  html body .messages::-webkit-scrollbar { width: 5px; }
-  html body .messages::-webkit-scrollbar-track { background: transparent; }
-  html body .messages::-webkit-scrollbar-thumb {
-    background: #6366f128; border-radius: 20px;
+  #customBar .thumb {
+    position: absolute; left: 0; right: 0; min-height: 30px;
+    border-radius: 20px;
+    background: rgba(99, 102, 241, 0.22);
   }
 
   .msg {
@@ -226,6 +227,7 @@
       <p style="font-size:0.75rem; opacity:0.6">零注入 · 多 API · 纯对话</p>
     </div>
   </div>
+  <div id="customBar"><div class="thumb"></div></div>
 
   <div class="input-area">
     <textarea id="userInput" rows="1" placeholder="发送消息…"
@@ -382,6 +384,25 @@
   }
 
   inputEl.addEventListener('input',()=>{inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,140)+'px';});
+
+  /* ── 自定义滚动条（真实DOM，不用 ::-webkit-scrollbar） ── */
+  (function(){
+    const bar=document.getElementById('customBar');
+    const thumb=bar.querySelector('.thumb');
+    function sync(){
+      const sh=messagesEl.scrollHeight, ch=messagesEl.clientHeight;
+      if(sh<=ch){bar.style.display='none';return;}
+      bar.style.display='';
+      const h=Math.max(ch/sh*100,6);
+      thumb.style.height=h+'%';
+      const max=sh-ch;
+      thumb.style.top=(max>0?messagesEl.scrollTop/max*(100-h):0)+'%';
+    }
+    messagesEl.addEventListener('scroll',sync);
+    new ResizeObserver(sync).observe(messagesEl);
+    setTimeout(sync,300);setTimeout(sync,1000);setTimeout(sync,2000);
+  })();
+
   loadProviders();
 </script>
 </body>
