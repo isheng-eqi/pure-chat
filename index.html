@@ -68,32 +68,25 @@
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
   }
 
-  /* ── 消息区域 ─────────────────────────────── */
-  .messages {
+  /* ── 消息区域 + 自定义滚动条 ─────────────── */
+  .msg-container {
     flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .messages {
+    height: 100%;
     overflow-y: auto;
     padding: 24px 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  /* 滚动条 —— 融入玻璃 UI，不割裂 */
-  .messages {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(99, 102, 241, 0.18) transparent;
-  }
-  .messages::-webkit-scrollbar { width: 5px; }
-  .messages::-webkit-scrollbar-track { background: transparent; }
-  .messages::-webkit-scrollbar-thumb {
-    background: rgba(99, 102, 241, 0.18);
-    border-radius: 20px;
-    transition: background 0.3s;
-  }
-  .messages::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.35);
-  }
-  .messages::-webkit-scrollbar-button { display: none; }
+  .messages::-webkit-scrollbar { display: none; }
 
   .msg {
     max-width: 85%;
@@ -323,6 +316,36 @@
   }
   .settings-row .api-status.ok { background: #22c55e; }
 
+  /* ── 自定义滚动条 ────────────────────────── */
+  .custom-scrollbar {
+    position: absolute;
+    right: 2px;
+    top: 8px;
+    bottom: 8px;
+    width: 5px;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .msg-container:hover .custom-scrollbar { opacity: 1; }
+  .custom-scrollbar-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: transparent;
+  }
+  .custom-scrollbar-thumb {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-radius: 20px;
+    min-height: 30px;
+    background: rgba(99, 102, 241, 0.25);
+    transition: background 0.2s;
+  }
+  .custom-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.45); }
+
   #modelInput { flex: 1.5; }
   #apiKey { flex: 2.5; }
   #baseUrlInput { flex: 3; }
@@ -359,12 +382,16 @@
 
 <!-- 对话卡片 -->
 <div class="chat-wrapper glass">
-  <!-- 消息列表 -->
-  <div class="messages" id="messages">
-    <div class="empty-hint" id="emptyHint">
-      <div class="dot"></div>
-      <p>Pure Chat</p>
-      <p style="font-size:0.75rem; opacity:0.6">零注入 · 多 API · 纯对话</p>
+  <div class="msg-container" id="msgContainer">
+    <div class="messages" id="messages">
+      <div class="empty-hint" id="emptyHint">
+        <div class="dot"></div>
+        <p>Pure Chat</p>
+        <p style="font-size:0.75rem; opacity:0.6">零注入 · 多 API · 纯对话</p>
+      </div>
+    </div>
+    <div class="custom-scrollbar" id="customScrollbar">
+      <div class="custom-scrollbar-thumb" id="scrollThumb"></div>
     </div>
   </div>
 
@@ -706,6 +733,29 @@
     inputEl.style.height = 'auto';
     inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
   });
+
+  /* ═══════════════════════════════════════════
+     自定义滚动条同步
+     ═══════════════════════════════════════════ */
+  const scrollThumb = document.getElementById('scrollThumb');
+
+  function syncScrollbar() {
+    const el = messagesEl;
+    const ratio = el.clientHeight / el.scrollHeight;
+    if (ratio >= 1) {
+      scrollThumb.style.display = 'none';
+      return;
+    }
+    scrollThumb.style.display = '';
+    scrollThumb.style.height = Math.max(ratio * 100, 8) + '%';
+    const scrollRatio = el.scrollTop / (el.scrollHeight - el.clientHeight);
+    const trackSpace = 100 - parseFloat(scrollThumb.style.height);
+    scrollThumb.style.top = (scrollRatio * trackSpace) + '%';
+  }
+
+  messagesEl.addEventListener('scroll', syncScrollbar);
+  const obs = new ResizeObserver(syncScrollbar);
+  obs.observe(messagesEl);
 
   // 启动
   loadProviders();
